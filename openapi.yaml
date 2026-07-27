@@ -1,0 +1,94 @@
+openapi: 3.1.0
+info:
+  title: Google Ads AI Agent
+  version: 1.0.0
+  description: Read Google Ads statistics and make controlled changes only after explicit confirmation.
+servers:
+  - url: https://REPLACE_WITH_CLOUD_RUN_URL
+paths:
+  /accounts:
+    get:
+      operationId: listAccessibleGoogleAdsAccounts
+      summary: List accessible Google Ads accounts
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Accessible accounts
+  /campaigns/stats:
+    post:
+      operationId: getCampaignStats
+      summary: Get campaign performance statistics
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [customer_id]
+              properties:
+                customer_id:
+                  type: string
+                date_range:
+                  type: string
+                  default: LAST_30_DAYS
+      responses:
+        "200":
+          description: Campaign statistics
+  /changes/plan:
+    post:
+      operationId: planGoogleAdsChange
+      summary: Prepare a Google Ads change and return a confirmation token
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [customer_id, action, campaign_id]
+              properties:
+                customer_id:
+                  type: string
+                action:
+                  type: string
+                  enum: [pause_campaign, enable_campaign, set_campaign_budget]
+                campaign_id:
+                  type: string
+                new_daily_budget_cad:
+                  type: number
+                reason:
+                  type: string
+      responses:
+        "200":
+          description: Plan requiring user confirmation
+  /changes/execute:
+    post:
+      operationId: executeConfirmedGoogleAdsChange
+      summary: Execute a previously planned change after explicit user confirmation
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [confirmation_token, confirmed]
+              properties:
+                confirmation_token:
+                  type: string
+                confirmed:
+                  type: boolean
+      responses:
+        "200":
+          description: Change result
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
